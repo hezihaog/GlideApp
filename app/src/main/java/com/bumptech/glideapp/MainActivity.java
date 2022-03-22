@@ -19,6 +19,12 @@ public class MainActivity extends AppCompatActivity {
         showBrokenGif();
         showNormalImage();
         showSmallImage();
+        showResImage();
+    }
+
+    private void showResImage() {
+        ImageView resImage = findViewById(R.id.res_image);
+        Glide.with(this).load(R.mipmap.bird).into(resImage);
     }
 
     private void showSmallImage() {
