@@ -160,9 +160,11 @@ public class Glide implements ComponentCallbacks2 {
    */
   @NonNull
   public static Glide get(@NonNull Context context) {
+    //双重double check实现单例
     if (glide == null) {
       synchronized (Glide.class) {
         if (glide == null) {
+          //构造Glide实例
           checkAndInitializeGlide(context);
         }
       }
@@ -179,6 +181,7 @@ public class Glide implements ComponentCallbacks2 {
           + " use the provided Glide instance instead");
     }
     isInitializing = true;
+    //构造Glide实例
     initializeGlide(context);
     isInitializing = false;
   }
@@ -217,19 +220,29 @@ public class Glide implements ComponentCallbacks2 {
     glide = null;
   }
 
+  /**
+   * 构造Glide实例
+   */
   private static void initializeGlide(@NonNull Context context) {
     initializeGlide(context, new GlideBuilder());
   }
 
+  /**
+   * 构造Glide实例
+   *
+   * @param builder Glide配置
+   */
   @SuppressWarnings("deprecation")
   private static void initializeGlide(@NonNull Context context, @NonNull GlideBuilder builder) {
     Context applicationContext = context.getApplicationContext();
+    //反射创建 com.bumptech.glide.GeneratedAppGlideModuleImpl，如果能找到，就说明自定义了GlideModule
     GeneratedAppGlideModule annotationGeneratedModule = getAnnotationGeneratedGlideModules();
     List<com.bumptech.glide.module.GlideModule> manifestModules = Collections.emptyList();
     if (annotationGeneratedModule == null || annotationGeneratedModule.isManifestParsingEnabled()) {
+      //找不到，但开启了isManifestParsingEnabled，就读取AndroidManifest.xml上配置的GlideModule
       manifestModules = new ManifestParser(applicationContext).parse();
     }
-
+    //根据配置的GlideModule过滤名单，剔除名单上配置的GlideModule
     if (annotationGeneratedModule != null
         && !annotationGeneratedModule.getExcludedModuleClasses().isEmpty()) {
       Set<Class<?>> excludedModuleClasses =
@@ -253,24 +266,32 @@ public class Glide implements ComponentCallbacks2 {
       }
     }
 
+    //获取RequestManager工厂，用于在with()方法中，创建RequestManager
     RequestManagerRetriever.RequestManagerFactory factory =
         annotationGeneratedModule != null
             ? annotationGeneratedModule.getRequestManagerFactory() : null;
     builder.setRequestManagerFactory(factory);
+    //遍历调用AndroidManifest.xml中配置的GlideModule上配置的applyOptions()方法
     for (com.bumptech.glide.module.GlideModule module : manifestModules) {
       module.applyOptions(applicationContext, builder);
     }
+    //遍历调用注解配置的GlideModule上配置的applyOptions()方法
     if (annotationGeneratedModule != null) {
       annotationGeneratedModule.applyOptions(applicationContext, builder);
     }
+    //构建Glide实例
     Glide glide = builder.build(applicationContext);
+    //调用AndroidManifest.xml中配置的GlideModule中的registerComponents()方法
     for (com.bumptech.glide.module.GlideModule module : manifestModules) {
       module.registerComponents(applicationContext, glide, glide.registry);
     }
+    //调用注解配置的GlideModule中的registerComponents()方法
     if (annotationGeneratedModule != null) {
       annotationGeneratedModule.registerComponents(applicationContext, glide, glide.registry);
     }
+    //Glide实现了ComponentCallbacks接口，用于被通知onConfigurationChanged()配置改变和onLowMemory()低内存通知
     applicationContext.registerComponentCallbacks(glide);
+    //单例变量赋值
     Glide.glide = glide;
   }
 
@@ -672,11 +693,13 @@ public class Glide implements ComponentCallbacks2 {
   private static RequestManagerRetriever getRetriever(@Nullable Context context) {
     // Context could be null for other reasons (ie the user passes in null), but in practice it will
     // only occur due to errors with the Fragment lifecycle.
+    //判空
     Preconditions.checkNotNull(
         context,
         "You cannot start a load on a not yet attached View or a Fragment where getActivity() "
             + "returns null (which usually occurs when getActivity() is called before the Fragment "
             + "is attached or after the Fragment is destroyed).");
+    //Glide.get(context)，或者Glide单实例
     return Glide.get(context).getRequestManagerRetriever();
   }
 

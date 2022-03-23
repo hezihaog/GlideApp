@@ -382,49 +382,64 @@ public final class GlideBuilder {
     return this;
   }
 
+  /**
+   * Glide的构造
+   */
   @NonNull
   Glide build(@NonNull Context context) {
+    //源执行器，允许在其线程上进行网络操作，获取资源
     if (sourceExecutor == null) {
       sourceExecutor = GlideExecutor.newSourceExecutor();
     }
 
+    //磁盘缓存执行器，不允许对其线程进行网络操作
     if (diskCacheExecutor == null) {
       diskCacheExecutor = GlideExecutor.newDiskCacheExecutor();
     }
 
+    //动画执行器，不允许在其线程上进行网络操作
     if (animationExecutor == null) {
       animationExecutor = GlideExecutor.newAnimationExecutor();
     }
 
+    //根据设备的参数计算需要设置的缓存大小
     if (memorySizeCalculator == null) {
       memorySizeCalculator = new MemorySizeCalculator.Builder(context).build();
     }
 
+    //网络连接监听工厂
     if (connectivityMonitorFactory == null) {
       connectivityMonitorFactory = new DefaultConnectivityMonitorFactory();
     }
 
+    //Bitmap缓存池，用于图片的缓存，使用LRUCache
     if (bitmapPool == null) {
       int size = memorySizeCalculator.getBitmapPoolSize();
       if (size > 0) {
+        //LRUCache缓存
         bitmapPool = new LruBitmapPool(size);
       } else {
+        //不使用缓存
         bitmapPool = new BitmapPoolAdapter();
       }
     }
 
+    //一个固定大小的数组池，使用LRU策略，让池保持在最大字节下
     if (arrayPool == null) {
       arrayPool = new LruArrayPool(memorySizeCalculator.getArrayPoolSizeInBytes());
     }
 
+    //图片内存缓存
     if (memoryCache == null) {
       memoryCache = new LruResourceCache(memorySizeCalculator.getMemoryCacheSize());
     }
 
+    //磁盘缓存
     if (diskCacheFactory == null) {
       diskCacheFactory = new InternalCacheDiskCacheFactory(context);
     }
 
+    //创建Engine，用于发起Request网络请求，读取磁盘图片
     if (engine == null) {
       engine =
           new Engine(
@@ -437,9 +452,11 @@ public final class GlideBuilder {
               isActiveResourceRetentionAllowed);
     }
 
+    //创建RequestManagerRetriever对象，getRetriever()方法返回该实例
     RequestManagerRetriever requestManagerRetriever =
         new RequestManagerRetriever(requestManagerFactory);
 
+    //构造Glide
     return new Glide(
         context,
         engine,
