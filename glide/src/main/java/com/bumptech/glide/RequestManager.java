@@ -390,6 +390,8 @@ public class RequestManager implements LifecycleListener,
   @CheckResult
   @Override
   public RequestBuilder<Drawable> load(@Nullable String string) {
+    //asDrawable()，创建一个RequestBuilder，并且指定它的泛型为Drawable类型
+    //调用RequestBuilder的load()方法，传入url
     return asDrawable().load(string);
   }
 

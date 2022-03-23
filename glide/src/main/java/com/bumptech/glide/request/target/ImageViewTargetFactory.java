@@ -14,9 +14,12 @@ public class ImageViewTargetFactory {
   @SuppressWarnings("unchecked")
   public <Z> ViewTarget<ImageView, Z> buildTarget(@NonNull ImageView view,
       @NonNull Class<Z> clazz) {
+    //加载成Bitmap，通过setImageBitmap()，设置给ImageView
     if (Bitmap.class.equals(clazz)) {
       return (ViewTarget<ImageView, Z>) new BitmapImageViewTarget(view);
     } else if (Drawable.class.isAssignableFrom(clazz)) {
+      //加载成Drawable，通过setImageDrawable()，设置给ImageView
+      //例如传入url，Glide.with(context).load(url).into(view)，会通过asDrawable()，clazz就为Drawable.class
       return (ViewTarget<ImageView, Z>) new DrawableImageViewTarget(view);
     } else {
       throw new IllegalArgumentException(

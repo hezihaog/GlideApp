@@ -76,6 +76,9 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
   private boolean isModelSet;
   private boolean isThumbnailBuilt;
 
+  /**
+   * @param transcodeClass 标识要加载的资源的类型
+   */
   protected RequestBuilder(Glide glide, RequestManager requestManager,
       Class<TranscodeType> transcodeClass, Context context) {
     this.glide = glide;
@@ -356,7 +359,9 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
 
   @NonNull
   private RequestBuilder<TranscodeType> loadGeneric(@Nullable Object model) {
+    //保存了加载的资源
     this.model = model;
+    //设置标志位，加载的时候会用到，如果没有设置为true，则直接执行错误回调
     isModelSet = true;
     return this;
   }
@@ -671,7 +676,9 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
    */
   @NonNull
   public ViewTarget<ImageView, TranscodeType> into(@NonNull ImageView view) {
+    //检查是否是主线程，如不是，则抛异常
     Util.assertMainThread();
+    //判空
     Preconditions.checkNotNull(view);
 
     RequestOptions requestOptions = this.requestOptions;
@@ -702,7 +709,7 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
           // Do nothing.
       }
     }
-
+    //transcodeClass是前面load()保存的资源类型
     return into(
         glideContext.buildImageViewTarget(view, transcodeClass),
         /*targetListener=*/ null,

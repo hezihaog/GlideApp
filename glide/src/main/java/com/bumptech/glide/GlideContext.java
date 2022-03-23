@@ -74,6 +74,9 @@ public class GlideContext extends ContextWrapper {
     return (TransitionOptions<?, T>) result;
   }
 
+  /**
+   * 根据要加载的资源的类型，构建ViewTarget
+   */
   @NonNull
   public <X> ViewTarget<ImageView, X> buildImageViewTarget(
       @NonNull ImageView imageView, @NonNull Class<X> transcodeClass) {
