@@ -81,6 +81,9 @@ public class RequestManagerRetriever implements Handler.Callback {
     handler = new Handler(Looper.getMainLooper(), this /* Callback */);
   }
 
+  /**
+   * 通过ApplicationContext，获取RequestManager
+   */
   @NonNull
   private RequestManager getApplicationManager(@NonNull Context context) {
     // Either an application context or we're on a background thread.
@@ -112,6 +115,7 @@ public class RequestManagerRetriever implements Handler.Callback {
     if (context == null) {
       throw new IllegalArgumentException("You cannot start a load on a null Context");
     } else if (Util.isOnMainThread() && !(context instanceof Application)) {
+      //找宿主Activity来创建RequestManager
       if (context instanceof FragmentActivity) {
         return get((FragmentActivity) context);
       } else if (context instanceof Activity) {
@@ -120,17 +124,22 @@ public class RequestManagerRetriever implements Handler.Callback {
         return get(((ContextWrapper) context).getBaseContext());
       }
     }
-
+    //通过ApplicationContext，获取RequestManager
     return getApplicationManager(context);
   }
 
   @NonNull
   public RequestManager get(@NonNull FragmentActivity activity) {
+    //如果不是主线程调用，使用ApplicationContext
     if (Util.isOnBackgroundThread()) {
       return get(activity.getApplicationContext());
     } else {
+      //主线程，检查Activity是否销毁
       assertNotDestroyed(activity);
+      //获取Fragment管理器
       FragmentManager fm = activity.getSupportFragmentManager();
+      //通过插入SupportFragment来获取RequestManager
+      //RequestManager被Glide用于开始、停止、管理Glide的请求
       return supportFragmentGet(
           activity, fm, /*parentHint=*/ null, isActivityVisible(activity));
     }
@@ -398,48 +407,70 @@ public class RequestManagerRetriever implements Handler.Callback {
         activity.getSupportFragmentManager(), /*parentHint=*/ null, isActivityVisible(activity));
   }
 
+  /**
+   * Activity是否销毁
+   */
   private static boolean isActivityVisible(Activity activity) {
     // This is a poor heuristic, but it's about all we have. We'd rather err on the side of visible
     // and start requests than on the side of invisible and ignore valid requests.
     return !activity.isFinishing();
   }
 
+  /**
+   * 添加插入一个空的Fragment到Activity或Fragment上
+   */
   @NonNull
   private SupportRequestManagerFragment getSupportRequestManagerFragment(
       @NonNull final FragmentManager fm, @Nullable Fragment parentHint, boolean isParentVisible) {
+    //通过Tag查找
     SupportRequestManagerFragment current =
         (SupportRequestManagerFragment) fm.findFragmentByTag(FRAGMENT_TAG);
+    //没有添加过
     if (current == null) {
+      //从缓存map中查找，找到则直接返回
       current = pendingSupportRequestManagerFragments.get(fm);
+      //也找不到，则创建一个
       if (current == null) {
         current = new SupportRequestManagerFragment();
         current.setParentFragmentHint(parentHint);
+        //如果当前页面已经是可见的，那么马上调用lifecycle的onStart()
         if (isParentVisible) {
           current.getGlideLifecycle().onStart();
         }
+        //加进缓存map，由于快速滚动会频繁触发，并且Fragment的事务是异步的，如果没有这个缓存map，可能会插入多个Fragment
         pendingSupportRequestManagerFragments.put(fm, current);
+        //添加Fragment
         fm.beginTransaction().add(current, FRAGMENT_TAG).commitAllowingStateLoss();
+        //发消息到主线程，由于Fragment的事务也是通过Handler来进行异步的
+        //所以这个消息如果被执行，那Fragment的事务肯定已经处理完了，那么就可以从map上移除Fragment实例了
         handler.obtainMessage(ID_REMOVE_SUPPORT_FRAGMENT_MANAGER, fm).sendToTarget();
       }
     }
     return current;
   }
 
+  /**
+   * 通过插入SupportFragment来获取RequestManager
+   */
   @NonNull
   private RequestManager supportFragmentGet(
       @NonNull Context context,
       @NonNull FragmentManager fm,
       @Nullable Fragment parentHint,
       boolean isParentVisible) {
+    //获取Fragment实例
     SupportRequestManagerFragment current =
         getSupportRequestManagerFragment(fm, parentHint, isParentVisible);
+    //从Fragment上，获取RequestManager实例
     RequestManager requestManager = current.getRequestManager();
+    //Fragment上没有，则通过工厂进行创建
     if (requestManager == null) {
       // TODO(b/27524013): Factor out this Glide.get() call.
       Glide glide = Glide.get(context);
       requestManager =
           factory.build(
               glide, current.getGlideLifecycle(), current.getRequestManagerTreeNode(), context);
+      //让Fragment持有RequestManager实例，下次就不需要再创建了
       current.setRequestManager(requestManager);
     }
     return requestManager;
