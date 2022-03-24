@@ -10,12 +10,18 @@ import com.bumptech.glide.util.Preconditions;
  * com.bumptech.glide.load.engine.Resource} interface.
  *
  * @param <Z> The type of data returned by the wrapped {@link Resource}.
+ *
+ * 使用的是引用计数算法，重点关注 acquire() 和 release()，acquire()会让引用计数 + 1，而release()会让引用计数 - 1
+ * 当计数为0时，通知监听器要进行回收
  */
 class EngineResource<Z> implements Resource<Z> {
   private final boolean isCacheable;
   private final boolean isRecyclable;
   private ResourceListener listener;
   private Key key;
+  /**
+   * 引用计数
+   */
   private int acquired;
   private boolean isRecycled;
   private final Resource<Z> resource;
@@ -82,6 +88,8 @@ class EngineResource<Z> implements Resource<Z> {
    * new consumers begin using the wrapped resource. It is always safer to call acquire more often
    * than necessary. Generally external users should never call this method, the framework will take
    * care of this for you. </p>
+   *
+   * 引用计数 + 1
    */
   void acquire() {
     if (isRecycled) {
@@ -100,6 +108,8 @@ class EngineResource<Z> implements Resource<Z> {
    * <p>This must only be called when a consumer that called the {@link #acquire()} method is now
    * done with the resource. Generally external users should never call this method, the framework
    * will take care of this for you.
+   *
+   * 引用计数 - 1
    */
   void release() {
     if (acquired <= 0) {
@@ -108,6 +118,7 @@ class EngineResource<Z> implements Resource<Z> {
     if (!Looper.getMainLooper().equals(Looper.myLooper())) {
       throw new IllegalThreadStateException("Must call release on the main thread");
     }
+    //当引用计数为0了，则回调监听器，就是要被回收了
     if (--acquired == 0) {
       listener.onResourceReleased(key, this);
     }

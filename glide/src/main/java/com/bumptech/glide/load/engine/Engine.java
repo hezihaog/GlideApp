@@ -250,33 +250,48 @@ public class Engine implements EngineJobListener,
     Log.v(TAG, log + " in " + LogTime.getElapsedMillis(startTime) + "ms, key: " + key);
   }
 
+  /**
+   * 从活动缓存中招
+   */
   @Nullable
   private EngineResource<?> loadFromActiveResources(Key key, boolean isMemoryCacheable) {
     if (!isMemoryCacheable) {
       return null;
     }
+    //从活动缓存中取
     EngineResource<?> active = activeResources.get(key);
     if (active != null) {
+      //取得到，引用计数 + 1
       active.acquire();
     }
 
     return active;
   }
 
+  /**
+   * 从MemoryCache中查找
+   */
   private EngineResource<?> loadFromCache(Key key, boolean isMemoryCacheable) {
     if (!isMemoryCacheable) {
       return null;
     }
 
+    //如果找到了，就从MemoryCache中移除
     EngineResource<?> cached = getEngineResourceFromCache(key);
     if (cached != null) {
+      //引用计数 + 1
       cached.acquire();
+      //转移到ActivityCache中
       activeResources.activate(key, cached);
     }
     return cached;
   }
 
+  /**
+   * 从MemoryCache中查找
+   */
   private EngineResource<?> getEngineResourceFromCache(Key key) {
+    //从MemoryCache中移除，该方法的下一步会添加到ActiveCache活动缓存
     Resource<?> cached = cache.remove(key);
 
     final EngineResource<?> result;
@@ -332,6 +347,7 @@ public class Engine implements EngineJobListener,
   @Override
   public void onResourceReleased(Key cacheKey, EngineResource<?> resource) {
     Util.assertMainThread();
+    //资源回收，从弱引用队列中移除
     activeResources.deactivate(cacheKey);
     if (resource.isCacheable()) {
       cache.put(cacheKey, resource);
