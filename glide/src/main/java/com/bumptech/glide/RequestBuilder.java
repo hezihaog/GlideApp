@@ -620,34 +620,48 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
       @NonNull Y target,
       @Nullable RequestListener<TranscodeType> targetListener,
       @NonNull RequestOptions options) {
+    //必须主线程
     Util.assertMainThread();
+    //非空判断
     Preconditions.checkNotNull(target);
+    //在RequestBuilder的load()方法中，会设置该标志位为true
     if (!isModelSet) {
       throw new IllegalArgumentException("You must call #load() before calling #into()");
     }
 
     options = options.autoClone();
+
+    //创建请求，用于显示图片，可能来自内存缓存、磁盘缓存或网络中
+    //返回的Request接口实现是SingleRequest
     Request request = buildRequest(target, targetListener, options);
 
+    //拿出之前的请求做对比，如果能够复用，则复用之前的请求
     Request previous = target.getRequest();
+    //2个请求的配置一致，那么可以考虑复用
     if (request.isEquivalentTo(previous)
+            //设置了忽略缓存或previous还没有完成
         && !isSkipMemoryCacheWithCompletePreviousRequest(options, previous)) {
       request.recycle();
       // If the request is completed, beginning again will ensure the result is re-delivered,
       // triggering RequestListeners and Targets. If the request is failed, beginning again will
       // restart the request, giving it another chance to complete. If the request is already
       // running, we can let it continue running without interruption.
+      //没有运行，那么开始
       if (!Preconditions.checkNotNull(previous).isRunning()) {
         // Use the previous request rather than the new one to allow for optimizations like skipping
         // setting placeholders, tracking and un-tracking Targets, and obtaining View dimensions
         // that are done in the individual Request.
+        //开始请求
         previous.begin();
       }
       return target;
     }
 
+    //不能复用之前的请求previous，那么就清除掉target上保存的request
     requestManager.clear(target);
+    //重新设置新的request，并且设置到ImageView的tag上
     target.setRequest(request);
+    //开始请求
     requestManager.track(target, request);
 
     return target;
@@ -688,6 +702,7 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
       // Clone in this method so that if we use this RequestBuilder to load into a View and then
       // into a different target, we don't retain the transformation applied based on the previous
       // View's scale type.
+      //根据ImageView设置的ScaleType，添加对应的RequestOption
       switch (view.getScaleType()) {
         case CENTER_CROP:
           requestOptions = requestOptions.clone().optionalCenterCrop();
@@ -711,6 +726,7 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
     }
     //transcodeClass是前面load()保存的资源类型
     return into(
+        //构建ViewTarget，例如 DrawableImageViewTarget
         glideContext.buildImageViewTarget(view, transcodeClass),
         /*targetListener=*/ null,
         requestOptions);
@@ -905,12 +921,14 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
       RequestOptions requestOptions) {
 
     // Build the ErrorRequestCoordinator first if necessary so we can update parentCoordinator.
+    //是否设置了错误时要显示的图片
     ErrorRequestCoordinator errorRequestCoordinator = null;
     if (errorBuilder != null) {
       errorRequestCoordinator = new ErrorRequestCoordinator(parentCoordinator);
       parentCoordinator = errorRequestCoordinator;
     }
 
+    //创建略缩图和原图的Request
     Request mainRequest =
         buildThumbnailRequestRecursive(
             target,
@@ -934,6 +952,7 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
       errorOverrideHeight = requestOptions.getOverrideHeight();
     }
 
+    //错误时要显示的图片的Request
     Request errorRequest = errorBuilder.buildRequestRecursive(
         target,
         targetListener,
@@ -943,10 +962,14 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
         errorOverrideWidth,
         errorOverrideHeight,
         errorBuilder.requestOptions);
+    //把2个请求组合到ErrorRequestCoordinator
     errorRequestCoordinator.setRequests(mainRequest, errorRequest);
     return errorRequestCoordinator;
   }
 
+  /**
+   * 创建略缩图和原图的Request
+   */
   private Request buildThumbnailRequestRecursive(
       Target<TranscodeType> target,
       RequestListener<TranscodeType> targetListener,
@@ -1052,6 +1075,9 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
     }
   }
 
+  /**
+   * 生成一个请求，会在池中复用，享元模式
+   */
   private Request obtainRequest(
       Target<TranscodeType> target,
       RequestListener<TranscodeType> targetListener,
@@ -1061,6 +1087,7 @@ public class RequestBuilder<TranscodeType> implements Cloneable,
       Priority priority,
       int overrideWidth,
       int overrideHeight) {
+    //返回Request接口的实现类SingleRequest
     return SingleRequest.obtain(
         context,
         glideContext,

@@ -612,7 +612,9 @@ public class RequestManager implements LifecycleListener,
   }
 
   void track(@NonNull Target<?> target, @NonNull Request request) {
+    //管理所有请求的状态，在页面生命周期变化时，控制请求做相应的处理
     targetTracker.track(target);
+    //发起请求
     requestTracker.runRequest(request);
   }
 

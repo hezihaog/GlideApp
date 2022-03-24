@@ -220,6 +220,7 @@ public final class SingleRequest<R> implements Request,
     assertNotCallingCallbacks();
     stateVerifier.throwIfRecycled();
     startTime = LogTime.getLogTime();
+    //如果model，就是传入的url等资源，为空，则回调加载失败
     if (model == null) {
       if (Util.isValidDimensions(overrideWidth, overrideHeight)) {
         width = overrideWidth;
@@ -232,6 +233,7 @@ public final class SingleRequest<R> implements Request,
       return;
     }
 
+    //已经是运行中，不允许再用这个对象发起请求
     if (status == Status.RUNNING) {
       throw new IllegalArgumentException("Cannot restart a running request");
     }
@@ -243,6 +245,7 @@ public final class SingleRequest<R> implements Request,
     // the view size has changed will need to explicitly clear the View or Target before starting
     // the new load.
     if (status == Status.COMPLETE) {
+      //如果我们请求完后，想重新开始加载，那么会直接返回已经加载好的资源
       onResourceReady(resource, DataSource.MEMORY_CACHE);
       return;
     }
@@ -250,13 +253,18 @@ public final class SingleRequest<R> implements Request,
     // Restarts for requests that are neither complete nor running can be treated as new requests
     // and can run again from the beginning.
 
+    //Glide对根据ImageView的宽高来进行缓存，所以需要获取ImageView的宽高，overrideWidth和overrideHeight默认为-1
     status = Status.WAITING_FOR_SIZE;
+    //第一次请求，是还没有获取宽高的，所以会走else逻辑去获取宽高
     if (Util.isValidDimensions(overrideWidth, overrideHeight)) {
       onSizeReady(overrideWidth, overrideHeight);
     } else {
+      //获取ImageView的宽高，target是前面buildImageViewTarget的时候，生成的DrawableImageViewTarget
+      //getSize()方法在它的父类ViewTarget中，获取成功会回调当前SingleRequest的onSizeReady()方法
       target.getSize(this);
     }
 
+    //回调加载中，显示预占位图
     if ((status == Status.RUNNING || status == Status.WAITING_FOR_SIZE)
         && canNotifyStatusChanged()) {
       target.onLoadStarted(getPlaceholderDrawable());
@@ -410,6 +418,7 @@ public final class SingleRequest<R> implements Request,
 
   /**
    * A callback method that should never be invoked directly.
+   * 获取ImageView的宽高成功
    */
   @Override
   public void onSizeReady(int width, int height) {
@@ -429,6 +438,8 @@ public final class SingleRequest<R> implements Request,
     if (IS_VERBOSE_LOGGABLE) {
       logV("finished setup for calling load in " + LogTime.getElapsedMillis(startTime));
     }
+
+    //通知引擎，加载图片
     loadStatus = engine.load(
         glideContext,
         model,

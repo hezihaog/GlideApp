@@ -37,16 +37,21 @@ public class RequestTracker {
 
   /**
    * Starts tracking the given request.
+   * 开始请求
    */
   public void runRequest(@NonNull Request request) {
+    //添加请求到运行的队列中
     requests.add(request);
+    //没有暂停，那么开始请求
     if (!isPaused) {
       request.begin();
     } else {
+      //暂停了，先清理
       request.clear();
       if (Log.isLoggable(TAG, Log.VERBOSE)) {
         Log.v(TAG, "Paused, delaying request");
       }
+      //添加到等待运行的队列中
       pendingRequests.add(request);
     }
   }

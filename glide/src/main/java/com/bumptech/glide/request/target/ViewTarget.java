@@ -241,6 +241,7 @@ public abstract class ViewTarget<T extends View, Z> extends BaseTarget<Z> {
    */
   @Override
   public void setRequest(@Nullable Request request) {
+    //设置Request请求对象到ImageView的Tag上
     setTag(request);
   }
 
@@ -276,6 +277,9 @@ public abstract class ViewTarget<T extends View, Z> extends BaseTarget<Z> {
     return "Target for: " + view;
   }
 
+  /**
+   * 设置一个对象到View的Tag上
+   */
   private void setTag(@Nullable Object tag) {
     if (tagId == null) {
       isTagUsedAtLeastOnce = true;
