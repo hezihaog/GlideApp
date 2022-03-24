@@ -44,6 +44,7 @@ class DataCacheGenerator implements DataFetcherGenerator,
 
   @Override
   public boolean startNext() {
+    //如果能从缓存中获取文件，能找到就返回，否则进去到下一个Generator，下一个是SourceGenerator
     while (modelLoaders == null || !hasNextModelLoader()) {
       sourceIdIndex++;
       if (sourceIdIndex >= cacheKeys.size()) {

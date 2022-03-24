@@ -133,8 +133,11 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
   /**
    * Returns true if this job will attempt to decode a resource from the disk cache, and false if it
    * will always decode from source.
+   *
+   * 如果能从磁盘中加载缓存，则返回true，否则返回false
    */
   boolean willDecodeFromCache() {
+    //获取第一个策略
     Stage firstStage = getNextStage(Stage.INITIALIZE);
     return firstStage == Stage.RESOURCE_CACHE || firstStage == Stage.DATA_CACHE;
   }
@@ -230,6 +233,7 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
         notifyFailed();
         return;
       }
+      //运行的核心逻辑，runWrapped()
       runWrapped();
     } catch (Throwable t) {
       // Catch Throwable and not Exception to handle OOMs. Throwables are swallowed by our
@@ -261,11 +265,18 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     }
   }
 
+  /**
+   * 运行的核心逻辑
+   */
   private void runWrapped() {
     switch (runReason) {
+      //初始阶段
       case INITIALIZE:
+        //获取下一个阶段的状态，返回 RESOURCE_CACHE
         stage = getNextStage(Stage.INITIALIZE);
+        //根据下一个阶段的状态，判断出是哪一个Generator来执行，因为是RESOURCE_CACHE，那么这里返回的是ResourceCacheGenerator
         currentGenerator = getNextGenerator();
+        //执行Generator
         runGenerators();
         break;
       case SWITCH_TO_SOURCE_SERVICE:
@@ -294,11 +305,16 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     }
   }
 
+  /**
+   * 执行Generator
+   */
   private void runGenerators() {
     currentThread = Thread.currentThread();
     startFetchTime = LogTime.getLogTime();
     boolean isStarted = false;
     while (!isCancelled && currentGenerator != null
+            //执行Generator的startNext，这里Generator是ResourceCacheGenerator
+            //如果获取不到，则去DataCacheGenerator，从缓存中查找，也找不到则去SourceGenerator
         && !(isStarted = currentGenerator.startNext())) {
       stage = getNextStage(stage);
       currentGenerator = getNextGenerator();
@@ -339,10 +355,12 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
 
   private Stage getNextStage(Stage current) {
     switch (current) {
+      //如果是初始阶段，那看配置的缓存策略，是否能从磁盘中获取资源缓存，就是解析好的缓存
       case INITIALIZE:
         return diskCacheStrategy.decodeCachedResource()
             ? Stage.RESOURCE_CACHE : getNextStage(Stage.RESOURCE_CACHE);
       case RESOURCE_CACHE:
+        //资源缓存，那么看看策略能不能从磁盘中获取源数据缓存
         return diskCacheStrategy.decodeCachedData()
             ? Stage.DATA_CACHE : getNextStage(Stage.DATA_CACHE);
       case DATA_CACHE:
@@ -407,6 +425,7 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     }
     Resource<R> resource = null;
     try {
+      //通过decodeFromData()获取Resource
       resource = decodeFromData(currentFetcher, currentData, currentDataSource);
     } catch (GlideException e) {
       e.setLoggingDetails(currentAttemptingKey, currentDataSource);

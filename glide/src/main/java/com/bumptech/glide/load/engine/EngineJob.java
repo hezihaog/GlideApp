@@ -112,11 +112,18 @@ class EngineJob<R> implements DecodeJob.Callback<R>,
     return this;
   }
 
+  /**
+   * 开始任务
+   *
+   * @param decodeJob 图片解码DecodeJob
+   */
   public void start(DecodeJob<R> decodeJob) {
     this.decodeJob = decodeJob;
+    //如果能从磁盘缓存中加载，则使用diskCacheExecutor，否则根据情况判断使用哪个GlideExecutor
     GlideExecutor executor = decodeJob.willDecodeFromCache()
         ? diskCacheExecutor
         : getActiveSourceExecutor();
+    //把decodeJob交给GlideExecutor执行，会回调DecodeJob的run()方法
     executor.execute(decodeJob);
   }
 

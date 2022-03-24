@@ -41,10 +41,12 @@ class ResourceCacheGenerator implements DataFetcherGenerator,
   @SuppressWarnings("PMD.CollapsibleIfStatements")
   @Override
   public boolean startNext() {
+    //获取缓存Key，会返回GlideUrl
     List<Key> sourceIds = helper.getCacheKeys();
     if (sourceIds.isEmpty()) {
       return false;
     }
+    //获取3个可以到达的registeredResourceClasses，GifDrawable、Bitmap、BitmapDrawable
     List<Class<?>> resourceClasses = helper.getRegisteredResourceClasses();
     if (resourceClasses.isEmpty()) {
       if (File.class.equals(helper.getTranscodeClass())) {
@@ -62,6 +64,7 @@ class ResourceCacheGenerator implements DataFetcherGenerator,
       if (resourceClassIndex >= resourceClasses.size()) {
         sourceIdIndex++;
         if (sourceIdIndex >= sourceIds.size()) {
+          //如果是第一次请求，就会在这里返回
           return false;
         }
         resourceClassIndex = 0;

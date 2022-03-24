@@ -100,7 +100,9 @@ public abstract class ImageViewTarget<Z> extends ViewTarget<ImageView, Z>
 
   @Override
   public void onResourceReady(@NonNull Z resource, @Nullable Transition<? super Z> transition) {
+    //资源加载好了，那么设置资源
     if (transition == null || !transition.transition(resource, this)) {
+      //设置资源
       setResourceInternal(resource);
     } else {
       maybeUpdateAnimatable(resource);
@@ -124,6 +126,7 @@ public abstract class ImageViewTarget<Z> extends ViewTarget<ImageView, Z>
   private void setResourceInternal(@Nullable Z resource) {
     // Order matters here. Set the resource first to make sure that the Drawable has a valid and
     // non-null Callback before starting it.
+    //setResource()是一个抽象方法，由子类去实现，例如DrawableImageViewTarget
     setResource(resource);
     maybeUpdateAnimatable(resource);
   }

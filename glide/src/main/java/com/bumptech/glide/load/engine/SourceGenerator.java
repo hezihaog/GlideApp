@@ -59,6 +59,7 @@ class SourceGenerator implements DataFetcherGenerator,
           && (helper.getDiskCacheStrategy().isDataCacheable(loadData.fetcher.getDataSource())
           || helper.hasLoadPath(loadData.fetcher.getDataClass()))) {
         started = true;
+        //fetcher是HttpUrlFetcher，通过它来请求数据，同时设置回调callback为自身，回调到自身实现的onDataReady()
         loadData.fetcher.loadData(helper.getPriority(), this);
       }
     }
@@ -102,11 +103,13 @@ class SourceGenerator implements DataFetcherGenerator,
 
   @Override
   public void onDataReady(Object data) {
+    //获取缓存策略，判断一下是否可以缓存
     DiskCacheStrategy diskCacheStrategy = helper.getDiskCacheStrategy();
     if (data != null && diskCacheStrategy.isDataCacheable(loadData.fetcher.getDataSource())) {
       dataToCache = data;
       // We might be being called back on someone else's thread. Before doing anything, we should
       // reschedule to get back onto Glide's thread.
+      //可以则调用reschedule()
       cb.reschedule();
     } else {
       cb.onDataFetcherReady(loadData.sourceKey, data, loadData.fetcher,

@@ -168,11 +168,14 @@ public class Engine implements EngineJobListener,
     Util.assertMainThread();
     long startTime = VERBOSE_IS_LOGGABLE ? LogTime.getLogTime() : 0;
 
+    //生成缓存Key，通过这个key，在缓存中查找
     EngineKey key = keyFactory.buildKey(model, signature, width, height, transformations,
         resourceClass, transcodeClass, options);
 
+    //先从活动缓存中找
     EngineResource<?> active = loadFromActiveResources(key, isMemoryCacheable);
     if (active != null) {
+      //找到了，直接返回
       cb.onResourceReady(active, DataSource.MEMORY_CACHE);
       if (VERBOSE_IS_LOGGABLE) {
         logWithTimeAndKey("Loaded resource from active resources", startTime, key);
@@ -180,8 +183,10 @@ public class Engine implements EngineJobListener,
       return null;
     }
 
+    //活动缓存中没有，则从内存缓存中招
     EngineResource<?> cached = loadFromCache(key, isMemoryCacheable);
     if (cached != null) {
+      //找到了，直接返回
       cb.onResourceReady(cached, DataSource.MEMORY_CACHE);
       if (VERBOSE_IS_LOGGABLE) {
         logWithTimeAndKey("Loaded resource from cache", startTime, key);
@@ -189,6 +194,7 @@ public class Engine implements EngineJobListener,
       return null;
     }
 
+    //2个内存缓存都没有，那么从缓存中，获取一个加载它的EngineJob
     EngineJob<?> current = jobs.get(key, onlyRetrieveFromCache);
     if (current != null) {
       current.addCallback(cb);
@@ -198,6 +204,7 @@ public class Engine implements EngineJobListener,
       return new LoadStatus(cb, current);
     }
 
+    //缓存中没有，创建一个EngineJob
     EngineJob<R> engineJob =
         engineJobFactory.build(
             key,
@@ -206,6 +213,7 @@ public class Engine implements EngineJobListener,
             useAnimationPool,
             onlyRetrieveFromCache);
 
+    //创建解码任务的DecodeJob，用于处理图片
     DecodeJob<R> decodeJob =
         decodeJobFactory.build(
             glideContext,
@@ -225,9 +233,11 @@ public class Engine implements EngineJobListener,
             options,
             engineJob);
 
+    //缓存EngineJob，下次可以直接在缓存中取
     jobs.put(key, engineJob);
 
     engineJob.addCallback(cb);
+    //把DecodeJob交给EngineJob
     engineJob.start(decodeJob);
 
     if (VERBOSE_IS_LOGGABLE) {

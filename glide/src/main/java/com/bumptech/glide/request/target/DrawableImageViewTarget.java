@@ -25,6 +25,7 @@ public class DrawableImageViewTarget extends ImageViewTarget<Drawable> {
 
   @Override
   protected void setResource(@Nullable Drawable resource) {
+    //设置资源到ImageView
     view.setImageDrawable(resource);
   }
 }
