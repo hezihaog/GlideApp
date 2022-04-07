@@ -206,6 +206,7 @@ final class DecodeHelper<Transcode> {
       //noinspection ForLoopReplaceableByForEach to improve perf
       for (int i = 0, size = modelLoaders.size(); i < size; i++) {
         ModelLoader<Object, ?> modelLoader = modelLoaders.get(i);
+        //构建加载器
         LoadData<?> current =
             modelLoader.buildLoadData(model, width, height, options);
         if (current != null) {

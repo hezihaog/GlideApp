@@ -54,6 +54,7 @@ class SourceGenerator implements DataFetcherGenerator,
     loadData = null;
     boolean started = false;
     while (!started && hasNextModelLoader()) {
+      //获取一个ModelLoader加载器
       loadData = helper.getLoadData().get(loadDataListIndex++);
       if (loadData != null
           && (helper.getDiskCacheStrategy().isDataCacheable(loadData.fetcher.getDataSource())
@@ -112,6 +113,7 @@ class SourceGenerator implements DataFetcherGenerator,
       //可以则调用reschedule()
       cb.reschedule();
     } else {
+      //没有配置缓存策略，走这里，回调到DecodeJob的onDataFetcherReady()
       cb.onDataFetcherReady(loadData.sourceKey, data, loadData.fetcher,
           loadData.fetcher.getDataSource(), originalKey);
     }

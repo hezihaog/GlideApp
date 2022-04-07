@@ -215,6 +215,7 @@ class EngineJob<R> implements DecodeJob.Callback<R>,
     // Hold on to resource for duration of request so we don't recycle it in the middle of
     // notifying if it synchronously released by one of the callbacks.
     engineResource.acquire();
+    //回调Engine层，任务完成
     listener.onEngineJobComplete(this, key, engineResource);
 
     //noinspection ForLoopReplaceableByForEach to improve perf
@@ -222,6 +223,7 @@ class EngineJob<R> implements DecodeJob.Callback<R>,
       ResourceCallback cb = cbs.get(i);
       if (!isInIgnoredCallbacks(cb)) {
         engineResource.acquire();
+        //回调给SingleRequest，通知资源获取到了
         cb.onResourceReady(engineResource, dataSource);
       }
     }
@@ -264,6 +266,7 @@ class EngineJob<R> implements DecodeJob.Callback<R>,
   public void onResourceReady(Resource<R> resource, DataSource dataSource) {
     this.resource = resource;
     this.dataSource = dataSource;
+    //在主线程回调中，通知上层Engine任务完成了
     MAIN_THREAD_HANDLER.obtainMessage(MSG_COMPLETE, this).sendToTarget();
   }
 
@@ -328,6 +331,7 @@ class EngineJob<R> implements DecodeJob.Callback<R>,
       EngineJob<?> job = (EngineJob<?>) message.obj;
       switch (message.what) {
         case MSG_COMPLETE:
+          //通知Engine，任务完成了
           job.handleResultOnMainThread();
           break;
         case MSG_EXCEPTION:

@@ -173,6 +173,9 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     }
   }
 
+  /**
+   * 回收资源
+   */
   private void releaseInternal() {
     releaseManager.reset();
     deferredEncodeManager.clear();
@@ -340,8 +343,12 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     onLoadFailed();
   }
 
+  /**
+   * 通知调用层，数据已经准备好了
+   */
   private void notifyComplete(Resource<R> resource, DataSource dataSource) {
     setNotifiedOrThrow();
+    //这个Callback是EngineJob
     callback.onResourceReady(resource, dataSource);
   }
 
@@ -394,6 +401,7 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     } else {
       GlideTrace.beginSection("DecodeJob.decodeFromRetrievedData");
       try {
+        //解析获取到的数据
         decodeFromRetrievedData();
       } finally {
         GlideTrace.endSection();
@@ -416,6 +424,9 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     }
   }
 
+  /**
+   * 解析获取到的数据
+   */
   private void decodeFromRetrievedData() {
     if (Log.isLoggable(TAG, Log.VERBOSE)) {
       logWithTimeAndKey("Retrieved data", startFetchTime,
@@ -431,6 +442,7 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
       e.setLoggingDetails(currentAttemptingKey, currentDataSource);
       throwables.add(e);
     }
+    //解析完成，通知下去
     if (resource != null) {
       notifyEncodeAndRelease(resource, currentDataSource);
     } else {
@@ -438,6 +450,9 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     }
   }
 
+  /**
+   * 通知调用层，数据已经准备好了
+   */
   private void notifyEncodeAndRelease(Resource<R> resource, DataSource dataSource) {
     if (resource instanceof Initializable) {
       ((Initializable) resource).initialize();
@@ -450,6 +465,7 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
       result = lockedResource;
     }
 
+    //通知调用层，数据已经准备好了
     notifyComplete(result, dataSource);
 
     stage = Stage.ENCODE;
@@ -464,9 +480,13 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     }
     // Call onEncodeComplete outside the finally block so that it's not called if the encode process
     // throws.
+    //通知解码完成
     onEncodeComplete();
   }
 
+  /**
+   * 解析Data数据为Resource
+   */
   private <Data> Resource<R> decodeFromData(DataFetcher<?> fetcher, Data data,
       DataSource dataSource) throws GlideException {
     try {
@@ -484,6 +504,9 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     }
   }
 
+  /**
+   * 解析Data数据为Resource
+   */
   @SuppressWarnings("unchecked")
   private <Data> Resource<R> decodeFromFetcher(Data data, DataSource dataSource)
       throws GlideException {
