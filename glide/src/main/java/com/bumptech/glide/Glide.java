@@ -392,6 +392,7 @@ public class Glide implements ComponentCallbacks2 {
         .append(ByteBuffer.class, new ByteBufferEncoder())
         .append(InputStream.class, new StreamEncoder(arrayPool))
         /* Bitmaps */
+        //解码器注册，通过第三个入参类型，把第一个入参类型，解码成第二个入参类型
         .append(Registry.BUCKET_BITMAP, ByteBuffer.class, Bitmap.class, byteBufferBitmapDecoder)
         .append(Registry.BUCKET_BITMAP, InputStream.class, Bitmap.class, streamBitmapDecoder)
         .append(
@@ -426,6 +427,7 @@ public class Glide implements ComponentCallbacks2 {
             new BitmapDrawableDecoder<>(resources, parcelFileDescriptorVideoDecoder))
         .append(BitmapDrawable.class, new BitmapDrawableEncoder(bitmapPool, bitmapEncoder))
         /* GIFs */
+        //Gif图加载器
         .append(
             Registry.BUCKET_GIF,
             InputStream.class,
@@ -447,6 +449,7 @@ public class Glide implements ComponentCallbacks2 {
         .append(
             Uri.class, Bitmap.class, new ResourceBitmapDecoder(resourceDrawableDecoder, bitmapPool))
         /* Files */
+        //一些工厂的注册
         .register(new ByteBufferRewinder.Factory())
         .append(File.class, ByteBuffer.class, new ByteBufferFileLoader.Factory())
         .append(File.class, InputStream.class, new FileLoader.StreamFactory())
@@ -505,6 +508,7 @@ public class Glide implements ComponentCallbacks2 {
         .append(Uri.class, InputStream.class, new UrlUriLoader.StreamFactory())
         .append(URL.class, InputStream.class, new UrlLoader.StreamFactory())
         .append(Uri.class, File.class, new MediaStoreFileLoader.Factory(context))
+         //注册Http请求加载器
         .append(GlideUrl.class, InputStream.class, new HttpGlideUrlLoader.Factory())
         .append(byte[].class, ByteBuffer.class, new ByteArrayLoader.ByteBufferFactory())
         .append(byte[].class, InputStream.class, new ByteArrayLoader.StreamFactory())
