@@ -29,14 +29,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void showSmallImage() {
         final ImageView imageView = findViewById(R.id.small_image);
-        String imgUrl = "https://i.guim.co.uk/img/media/eb8dd183506d1ff62ba4a899652d7582870f10a4/0_220_5476_3284/master/5476.jpg?w=1300&q=55&auto=format&usm=12&fit=max&s=76a40a50ff81f5b898afb8692cc3c0b9";
+        String imgUrl = "https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimg1.doubanio.com%2Fview%2Fnote%2Fl%2Fpublic%2Fp82460877.jpg&refer=http%3A%2F%2Fimg1.doubanio.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=auto?sec=1651994649&t=e5ab548edb343984d05868bf34cdcb5f";
         Glide.with(this).load(imgUrl).apply(new GlideOptions().miniThumb()).into(imageView);
 //        GlideApp.with(this).load(imgUrl).miniThumb().into(imageView);
     }
 
     private void showNormalImage() {
         final ImageView imageView = findViewById(R.id.imageview);
-        String imgUrl = "https://i.guim.co.uk/img/media/eb8dd183506d1ff62ba4a899652d7582870f10a4/0_220_5476_3284/master/5476.jpg?w=1300&q=55&auto=format&usm=12&fit=max&s=76a40a50ff81f5b898afb8692cc3c0b9";
+        String imgUrl = "https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimg1.doubanio.com%2Fview%2Fnote%2Fl%2Fpublic%2Fp82460877.jpg&refer=http%3A%2F%2Fimg1.doubanio.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=auto?sec=1651994649&t=e5ab548edb343984d05868bf34cdcb5f";
         RequestManager requestManager = Glide.with(this);
         Log.d(TAG, "showNormalImage: requestManager:" + requestManager);
         GlideApp.with(this).asMyBitmap().load(imgUrl).into(imageView);
