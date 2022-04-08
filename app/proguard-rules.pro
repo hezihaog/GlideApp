@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# OkHttp Glide 加载
+-keep class com.bumptech.glide.integration.okhttp3.OkHttpGlideModule
