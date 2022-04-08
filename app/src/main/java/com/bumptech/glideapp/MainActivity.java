@@ -1,13 +1,26 @@
 package com.bumptech.glideapp;
 
+import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
-import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
+import com.zh.android.glide.progress.ProgressInterceptor;
+import com.zh.android.glide.progress.ProgressListener;
+import com.zh.android.glide.view.CircleProgressView;
 
 public class MainActivity extends AppCompatActivity {
     public static final String TAG = "MainActivity";
@@ -20,11 +33,64 @@ public class MainActivity extends AppCompatActivity {
         showNormalImage();
         showSmallImage();
         showResImage();
+        showProgressImager();
     }
 
     private void showResImage() {
         ImageView resImage = findViewById(R.id.res_image);
         Glide.with(this).load(R.mipmap.bird).into(resImage);
+    }
+
+    private void showProgressImager() {
+        Button loadImgBtn = findViewById(R.id.load_image_btn);
+        final ImageView imageView = findViewById(R.id.progress_image);
+        final CircleProgressView imageProgressView = findViewById(R.id.image_progress);
+        final TextView imageProgressText = findViewById(R.id.progress_text);
+        final String imgUrl = "https://www.xiwangchina.com/Uploads/Picture/2018/10/24/s5bcfdc83b2ff9.jpg";
+        ProgressInterceptor.addListener(imgUrl, new ProgressListener() {
+            @SuppressLint("SetTextI18n")
+            @Override
+            public void onProgress(final int progress) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        imageProgressView.setProgress(progress);
+                        imageProgressText.setText(progress + "%");
+                    }
+                });
+            }
+        });
+        loadImgBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                imageProgressView.setVisibility(View.VISIBLE);
+                imageProgressText.setVisibility(View.VISIBLE);
+                imageProgressView.setProgress(0f);
+                GlideApp.with(imageView)
+                        .asBitmap()
+                        .skipMemoryCache(true)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .addListener(new RequestListener<Bitmap>() {
+                            @Override
+                            public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Bitmap> target, boolean isFirstResource) {
+                                imageProgressView.setVisibility(View.GONE);
+                                imageProgressText.setVisibility(View.GONE);
+                                ProgressInterceptor.removeListener(model);
+                                return false;
+                            }
+
+                            @Override
+                            public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
+                                imageProgressView.setVisibility(View.GONE);
+                                imageProgressText.setVisibility(View.GONE);
+                                ProgressInterceptor.removeListener(model);
+                                return false;
+                            }
+                        })
+                        .load(imgUrl)
+                        .into(imageView);
+            }
+        });
     }
 
     private void showSmallImage() {

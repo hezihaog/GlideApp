@@ -6,7 +6,11 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.GlideBuilder;
 import com.bumptech.glide.Registry;
 import com.bumptech.glide.load.model.GlideUrl;
+import com.zh.android.glide.progress.ProgressInterceptor;
+
 import java.io.InputStream;
+
+import okhttp3.OkHttpClient;
 
 /**
  * A {@link com.bumptech.glide.module.GlideModule} implementation to replace Glide's default
@@ -28,7 +32,11 @@ public class OkHttpGlideModule implements com.bumptech.glide.module.GlideModule 
   }
 
   @Override
-  public void registerComponents(Context context, Glide glide, Registry registry) {
-    registry.replace(GlideUrl.class, InputStream.class, new OkHttpUrlLoader.Factory());
+  public void registerComponents(@NonNull Context context, @NonNull Glide glide, Registry registry) {
+    OkHttpClient okHttpClient = new OkHttpClient.Builder()
+            //添加进度拦截器
+            .addInterceptor(new ProgressInterceptor())
+            .build();
+    registry.replace(GlideUrl.class, InputStream.class, new OkHttpUrlLoader.Factory(okHttpClient));
   }
 }

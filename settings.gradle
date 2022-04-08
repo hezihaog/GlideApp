@@ -1,2 +1,3 @@
 include ':app', ':glide'
 include ':okhttp3-integration'
+include ':image-progress'

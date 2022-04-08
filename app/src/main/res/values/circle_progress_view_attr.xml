@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 圆环进度View -->
+    <declare-styleable name="CircleProgressView">
+        <!-- 进度的颜色 -->
+        <attr name="cp_circle_color" format="reference|color" />
+        <!-- 总进度的颜色（一直保持的总进度的颜色） -->
+        <attr name="cp_remain_circle_color" format="reference|color" />
+        <!--当前进度值-->
+        <attr name="cp_progress" format="integer" />
+        <!--进度的最大值-->
+        <attr name="cp_max" format="integer" />
+        <!--圆弧轮廓的宽度-->
+        <attr name="cp_remain_circle_border_width" format="dimension" />
+        <!-- 背景颜色 -->
+        <attr name="cp_bg_color" format="reference|color" />
+    </declare-styleable>
+</resources>
