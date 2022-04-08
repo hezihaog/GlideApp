@@ -2,6 +2,8 @@ package com.bumptech.glideapp;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -17,7 +19,9 @@ import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.BitmapImageViewTarget;
 import com.bumptech.glide.request.target.Target;
+import com.bumptech.glide.request.transition.Transition;
 import com.zh.android.glide.progress.ProgressInterceptor;
 import com.zh.android.glide.progress.ProgressListener;
 import com.zh.android.glide.view.CircleProgressView;
@@ -47,48 +51,57 @@ public class MainActivity extends AppCompatActivity {
         final CircleProgressView imageProgressView = findViewById(R.id.image_progress);
         final TextView imageProgressText = findViewById(R.id.progress_text);
         final String imgUrl = "https://www.xiwangchina.com/Uploads/Picture/2018/10/24/s5bcfdc83b2ff9.jpg";
-        ProgressInterceptor.addListener(imgUrl, new ProgressListener() {
-            @SuppressLint("SetTextI18n")
-            @Override
-            public void onProgress(final int progress) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        imageProgressView.setProgress(progress);
-                        imageProgressText.setText(progress + "%");
-                    }
-                });
-            }
-        });
         loadImgBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                imageProgressView.setVisibility(View.VISIBLE);
-                imageProgressText.setVisibility(View.VISIBLE);
-                imageProgressView.setProgress(0f);
                 GlideApp.with(imageView)
                         .asBitmap()
                         .skipMemoryCache(true)
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .override(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
                         .addListener(new RequestListener<Bitmap>() {
                             @Override
                             public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Bitmap> target, boolean isFirstResource) {
-                                imageProgressView.setVisibility(View.GONE);
-                                imageProgressText.setVisibility(View.GONE);
                                 ProgressInterceptor.removeListener(model);
                                 return false;
                             }
 
                             @Override
                             public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
-                                imageProgressView.setVisibility(View.GONE);
-                                imageProgressText.setVisibility(View.GONE);
                                 ProgressInterceptor.removeListener(model);
                                 return false;
                             }
                         })
                         .load(imgUrl)
-                        .into(imageView);
+                        .into(new BitmapImageViewTarget(imageView) {
+                            @Override
+                            public void onLoadStarted(@Nullable Drawable placeholder) {
+                                super.onLoadStarted(placeholder);
+                                imageProgressView.setVisibility(View.VISIBLE);
+                                imageProgressText.setVisibility(View.VISIBLE);
+                                imageProgressView.setProgress(0f);
+                                ProgressInterceptor.addListener(imgUrl, new ProgressListener() {
+                                    @SuppressLint("SetTextI18n")
+                                    @Override
+                                    public void onProgress(final int progress) {
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                imageProgressView.setProgress(progress);
+                                                imageProgressText.setText(progress + "%");
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                                super.onLoadFailed(errorDrawable);
+                                imageProgressView.setVisibility(View.GONE);
+                                imageProgressText.setVisibility(View.GONE);
+                            }
+                        });
             }
         });
     }
