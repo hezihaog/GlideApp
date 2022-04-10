@@ -538,6 +538,7 @@ public final class SingleRequest<R> implements Request,
       return;
     }
 
+    //继续通知资源准备好了
     onResourceReady((Resource<R>) resource, (R) received, dataSource);
   }
 

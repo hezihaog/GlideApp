@@ -232,6 +232,7 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     // ensure that the fetcher is cleaned up either way.
     DataFetcher<?> localFetcher = currentFetcher;
     try {
+      //如果已经取消，则回调失败
       if (isCancelled) {
         notifyFailed();
         return;
@@ -283,9 +284,11 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
         runGenerators();
         break;
       case SWITCH_TO_SOURCE_SERVICE:
+        //尝试从磁盘缓存切到内存缓存
         runGenerators();
         break;
       case DECODE_DATA:
+        //解码原数据，也就是去加载资源
         decodeFromRetrievedData();
         break;
       default:
@@ -293,13 +296,20 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
     }
   }
 
+  /**
+   * 获取下一个DataFetcherGenerator
+   */
   private DataFetcherGenerator getNextGenerator() {
+    //主要看DataFetcherGenerator的startNext()方法
     switch (stage) {
+      //ResourceCacheGenerator，寻找是否有经过转换、解码之后的磁盘文件缓存，这个缓存要比源文件缓存小
       case RESOURCE_CACHE:
         return new ResourceCacheGenerator(decodeHelper, this);
       case DATA_CACHE:
+        //DataCacheGenerator，寻找源文件磁盘缓存，这个是加载的源文件直接写入缓存
         return new DataCacheGenerator(decodeHelper, this);
       case SOURCE:
+        //上面2个缓存Generator都没有命中，则通过SourceGenerator，那么Http请求获取资源，资源请求回来之后先写入磁盘缓存，再返回到Target
         return new SourceGenerator(decodeHelper, this);
       case FINISHED:
         return null;
@@ -322,6 +332,7 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
       stage = getNextStage(stage);
       currentGenerator = getNextGenerator();
 
+      //只有循环到为Stage.SOURCE，才会结束循环
       if (stage == Stage.SOURCE) {
         reschedule();
         return;
@@ -383,7 +394,9 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
 
   @Override
   public void reschedule() {
+    //首先将runReason置为SWITCH_TO_SOURCE_SERVICE，尝试从磁盘缓存切到内存缓存
     runReason = RunReason.SWITCH_TO_SOURCE_SERVICE;
+    //callback就是EngineJob，所以回到EngineJob.reschedule()方法
     callback.reschedule(this);
   }
 
@@ -744,14 +757,17 @@ class DecodeJob<R> implements DataFetcherGenerator.FetcherReadyCallback,
    */
   private enum RunReason {
     /** The first time we've been submitted. */
+    //首次提交任务
     INITIALIZE,
     /**
      * We want to switch from the disk cache service to the source executor.
+     * 尝试从磁盘缓存切到内存缓存
      */
     SWITCH_TO_SOURCE_SERVICE,
     /**
      * We retrieved some data on a thread we don't own and want to switch back to our thread to
      * process the data.
+     * 解码原数据，也就是去加载资源
      */
     DECODE_DATA,
   }
